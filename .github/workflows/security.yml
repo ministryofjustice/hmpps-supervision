@@ -1,0 +1,32 @@
+name: Security
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 5 * * 1-5' # every weekday at 5 AM
+
+jobs:
+  get-projects:
+    permissions:
+      contents: read
+    uses: ministryofjustice/hmpps-probation-integration-services/.github/workflows/get-projects.yml@main
+    with:
+      projects: All
+
+  snyk:
+    name: Snyk
+    needs: get-projects
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    strategy:
+      matrix:
+        project: ${{ fromJSON(needs.get-projects.outputs.projects) }}
+    uses: ministryofjustice/hmpps-github-actions/.github/workflows/security_snyk_scan.yml@v2
+    with:
+      channel_id: probation-integration-notifications
+      subproject: ${{ matrix.project }}
+    secrets:
+      HMPPS_SNYK_API_KEY: ${{ secrets.HMPPS_SNYK_API_KEY }}
+      HMPPS_SRE_SLACK_BOT_TOKEN: ${{ secrets.HMPPS_SRE_SLACK_BOT_TOKEN }}

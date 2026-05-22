@@ -1,0 +1,63 @@
+name: Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  checks: write
+  packages: write
+
+jobs:
+  build:
+    name: Build
+    uses: ./.github/workflows/build.yml
+    concurrency: pipeline-build-${{ github.ref_name }}
+    with:
+      push: true
+    secrets:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+  deploy-to-dev:
+    name: Deploy to dev
+    uses: ./.github/workflows/pipeline-deploy.yml
+    needs: build
+    strategy:
+      matrix:
+        project: ${{ fromJSON(needs.build.outputs.changes) }}
+    with:
+      environment: dev
+      version: ${{ needs.build.outputs.version }}
+      project: ${{ matrix.project }}
+    secrets: inherit
+
+  deploy-to-preprod:
+    name: Deploy to pre-prod
+    uses: ./.github/workflows/pipeline-deploy.yml
+    needs: build
+    strategy:
+      matrix:
+        project: ${{ fromJSON(needs.build.outputs.changes) }}
+    with:
+      environment: preprod
+      version: ${{ needs.build.outputs.version }}
+      project: ${{ matrix.project }}
+    secrets: inherit
+
+  deploy-to-prod:
+    name: Deploy to prod
+    uses: ./.github/workflows/pipeline-deploy.yml
+    needs:
+      - build
+      - deploy-to-dev
+      - deploy-to-preprod
+    strategy:
+      matrix:
+        project: ${{ fromJSON(needs.build.outputs.changes) }}
+    with:
+      environment: preprod
+      version: ${{ needs.build.outputs.version }}
+      project: ${{ matrix.project }}
+    secrets: inherit
