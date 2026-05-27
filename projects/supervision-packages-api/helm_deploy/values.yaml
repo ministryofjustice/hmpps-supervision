@@ -1,0 +1,43 @@
+generic-service:
+  nameOverride: supervision-packages-api
+  serviceAccountName: supervision-packages-api
+
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: "0.125"
+      memory: 1Gi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+  image:
+    repository: ghcr.io/ministryofjustice/hmpps-supervision/supervision-packages-api
+    port: 8080
+
+  ingress:
+    enabled: true
+    tlsSecretName: supervision-packages-api-cert
+
+  env:
+    SENTRY_TRACES_SAMPLE_RATE: '0.05'
+
+  namespace_secrets:
+    common:
+      APPLICATIONINSIGHTS_CONNECTION_STRING: APPLICATIONINSIGHTS_CONNECTION_STRING
+      SPRING_DATASOURCE_URL: DB_URL
+      SPRING_DATASOURCE_USERNAME: DB_USERNAME
+      SPRING_DATASOURCE_PASSWORD: DB_PASSWORD
+    supervision-packages-api-sentry:
+      SENTRY_DSN: SENTRY_DSN
+    supervision-packages-api-queue:
+      MESSAGING_CONSUMER_QUEUE: QUEUE_NAME
+
+  allowlist:
+    groups:
+      - moj_cloud_platform
+      - unilink_staff
+
+generic-prometheus-alerts:
+  targetApplication: supervision-packages-api
+  alertSeverity: probation-integration-notifications

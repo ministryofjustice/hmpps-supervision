@@ -1,0 +1,11 @@
+generic-service:
+  ingress:
+    host: supervision-packages-api-preprod.hmpps.service.justice.gov.uk
+
+  env:
+    SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "https://sign-in-preprod.hmpps.service.justice.gov.uk/auth/.well-known/jwks.json"
+    SENTRY_ENVIRONMENT: preprod
+
+  scheduledDowntime:
+    enabled: true
+    timeZone: Europe/London

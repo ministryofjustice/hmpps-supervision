@@ -1,0 +1,74 @@
+name: Pipeline deploy
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        type: string
+        required: true
+      environment:
+        type: string
+        required: true
+      version:
+        type: string
+        required: false
+
+permissions:
+  contents: read
+  checks: write
+  packages: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    concurrency: deploy-${{ inputs.project }}-${{ inputs.environment }}
+    environment:
+      name: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
+
+      - name: Get build info
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: build-info-${{ inputs.project }}
+          path: projects/${{ inputs.project }}/build/info
+
+      - name: Authenticate
+        uses: ministryofjustice/hmpps-probation-integration-services/.github/actions/cloud-platform-auth@main
+        with:
+          api: https://${{ secrets.KUBE_CLUSTER }}
+          cert: ${{ secrets.KUBE_CERT }}
+          cluster: ${{ secrets.KUBE_CLUSTER }}
+          namespace: ${{ secrets.KUBE_NAMESPACE }}
+          token: ${{ secrets.KUBE_TOKEN }}
+
+      - name: Deploy
+        run: |
+          yq -i '.appVersion = "${{ inputs.version }}"' 'projects/${{ inputs.project }}/helm_deploy/Chart.yaml'
+          helm dependency update 'projects/${{ inputs.project }}/helm_deploy'
+          exec helm upgrade '${{ inputs.project }}' 'projects/${{ inputs.project }}/helm_deploy' \
+            --atomic \
+            --history-max 10 \
+            --force \
+            --install \
+            --reset-values \
+            --set 'version=${{ inputs.version }}' \
+            --set 'generic-service.image.tag=${{ inputs.version }}' \
+            --set 'generic-service.env.VERSION=${{ inputs.version }}' \
+            --timeout 10m \
+            --values <(sed 's/build\./INFO_BUILD_/' projects/${{ inputs.project }}/build/info/build-info.properties | yq -p=props 'with_entries(.key |= upcase) | {"generic-service": {"env": .}}') \
+            --values <(echo '${{ vars.HMPPS_IP_ALLOWLIST_GROUPS_YAML }}' | base64 -d) \
+            --values 'projects/${{ inputs.project }}/helm_deploy/values.yaml' \
+            --values 'projects/${{ inputs.project }}/helm_deploy/values-${{ inputs.environment }}.yaml' \
+            --wait
+
+      - name: Create Sentry release
+        uses: getsentry/action-release@5657c9e888b4e2cc85f4d29143ea4131fde4a73a # v3.6.0
+        env:
+          SENTRY_ORG: ministryofjustice
+          SENTRY_PROJECT: ${{ inputs.project }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        with:
+          environment: ${{ inputs.environment }}
+          release: ${{ inputs.version }}

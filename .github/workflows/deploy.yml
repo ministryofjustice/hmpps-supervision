@@ -1,0 +1,43 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: Project
+        type: choice
+        required: true
+        options:
+          - supervision-packages-api
+      environment:
+        description: Environment
+        type: choice
+        required: true
+        options:
+          - dev
+          - preprod
+          - prod
+
+permissions:
+  contents: read
+  checks: write
+  packages: write
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      push: true
+      force: true
+      projects: '["${{ inputs.project }}"]'
+    secrets:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+  deploy:
+    uses: ./.github/workflows/pipeline-deploy.yml
+    needs: build
+    with:
+      environment: ${{ inputs.environment }}
+      project: ${{ inputs.project }}
+      version: ${{needs.build.outputs.version }}
+    secrets: inherit
