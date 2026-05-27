@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         project: ${{ fromJSON(needs.get-projects.outputs.projects) }}
-    uses: ministryofjustice/hmpps-github-actions/.github/workflows/security_snyk_scan.yml@v2
+    uses: ministryofjustice/hmpps-github-actions/.github/workflows/security_snyk_scan.yml@v2.14.7
     with:
       channel_id: probation-integration-notifications
       subproject: ${{ matrix.project }}
