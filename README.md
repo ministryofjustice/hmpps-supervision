@@ -94,7 +94,7 @@ To run Gradle tasks in a subproject, prepend the task name with the name of the 
 used to set the Spring profile. For example,
 
 ```shell
-SPRING_PROFILES_ACTIVE=dev ./gradlew projects:<project-name>:bootRun
+SPRING_PROFILES_ACTIVE=dev ./gradlew <project-name>:bootRun
 ```
 
 ## Support

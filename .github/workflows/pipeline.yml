@@ -57,7 +57,7 @@ jobs:
       matrix:
         project: ${{ fromJSON(needs.build.outputs.changes) }}
     with:
-      environment: preprod
+      environment: prod
       version: ${{ needs.build.outputs.version }}
       project: ${{ matrix.project }}
     secrets: inherit

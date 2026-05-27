@@ -11,7 +11,7 @@ import java.nio.charset.Charset
 @Service
 class TelemetryService(private val telemetryClient: TelemetryClient = TelemetryClient()) {
     companion object {
-        private val log = LoggerFactory.getLogger(this::class.java)
+        private val log = LoggerFactory.getLogger(TelemetryService::class.java)
     }
 
     @Async
