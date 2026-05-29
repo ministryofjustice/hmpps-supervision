@@ -5,9 +5,9 @@ dependencyResolutionManagement {
         create("libs") {
             library("applicationinsights", "com.microsoft.azure:applicationinsights-web:3.7.8")
             library("aws", "io.awspring.cloud:spring-cloud-aws-dependencies:4.0.2")
-            library("otel", "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.27.0")
+            library("otel", "io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.28.1")
             library("springdoc", "org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
-            library("sentry", "io.sentry:sentry-spring-boot-4:8.41.0")
+            library("sentry", "io.sentry:sentry-spring-boot-4:8.42.0")
 
             bundle("telemetry", listOf("applicationinsights", "otel", "sentry"))
         }
@@ -15,7 +15,7 @@ dependencyResolutionManagement {
 }
 
 plugins {
-    id("com.gradle.develocity") version "4.4.1"
+    id("com.gradle.develocity") version "4.4.2"
 }
 develocity {
     buildScan {
